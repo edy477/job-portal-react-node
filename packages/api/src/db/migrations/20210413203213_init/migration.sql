@@ -1,4 +1,6 @@
+
 -- CreateEnum
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
 
 -- CreateTable

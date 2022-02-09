@@ -13,21 +13,91 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String            @unique
+  /// @TypeGraphQL.omit(output: true)
+  password        String
+  firstName       String
+  lastName        String
+  avatar          String?
+  role            Role              @default(USER)
+  bio             String?
+  createdAt       DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
+  jobpostactivity jobpostactivity[] @ignore
+}
+
+model Job {
+  id                     Int               @id(map: "job_pkey") @default(autoincrement())
+  posted_by_id           Int?
+  job_type_id            Int?
+  company_id             Int?
+  is_company_name_hidden Boolean?
+  created_date           DateTime          @db.Timestamp(6)
+  job_description        String?           @db.VarChar(500)
+  job_location_id        Int?
+  is_active              String?           @db.VarChar(1)
+  createdAt              DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime          @default(now()) @db.Timestamptz(6)
+  company                company?          @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "job_fk2")
+  joblocation            joblocation?      @relation(fields: [job_location_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "job_fk3")
+  jobtype                jobtype?          @relation(fields: [job_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "job_fk")
+  jobpostactivity        jobpostactivity[] @ignore
+}
+
+model company {
+  id                  Int       @id @default(autoincrement())
+  company_name        String    @db.VarChar(100)
+  profile_description String    @db.VarChar(1000)
+  bussines_stream_id  DateTime? @db.Timestamp(6)
+  establishment_date  DateTime? @db.Timestamp(6)
+  company_website_url String    @db.VarChar(500)
+  Job                 Job[]
+}
+
+model joblocation {
+  id             Int     @id @default(autoincrement())
+  street_address String? @db.VarChar(100)
+  city           String? @db.VarChar(50)
+  state          String? @db.VarChar(50)
+  country        String? @db.VarChar(50)
+  zip            String? @db.VarChar(50)
+  Job            Job[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model jobpostactivity {
+  user_account_id String?   @db.Uuid
+  job_post_id     Int?
+  apply_date      DateTime? @default(now()) @db.Timestamp(6)
+  Job             Job?      @relation(fields: [job_post_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "jobpostactivity_fk2")
+  User            User?     @relation(fields: [user_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "jobpostactivity_fk")
+
+  @@ignore
+}
+
+model jobtype {
+  id       Int     @id @default(autoincrement())
+  job_type String? @db.VarChar(220)
+  Job      Job[]
+}
+
+model seekerprofile {
+  user_account_id    String  @id @db.Uuid
+  firstname          String? @db.VarChar(250)
+  lastname           String? @db.VarChar(250)
+  current_salary     Int?
+  is_anually_monthly String? @db.VarChar(1)
+  currency           String? @db.VarChar(50)
+}
+
+model skillset {
+  id             Int     @id @default(autoincrement())
+  skill_set_name String? @db.VarChar(250)
+}
+
 enum Role {
   USER
   ADMIN
-}
-
-model User {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email     String   @unique
-  /// @TypeGraphQL.omit(output: true)
-  password  String
-  firstName String
-  lastName  String
-  avatar    String?
-  role      Role     @default(USER)
-  bio       String?
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 }
